@@ -473,7 +473,6 @@ class DataStore(
             desc="get_users",
         )
 
-    @defer.inlineCallbacks
     def get_users_paginate(self, order, start, limit):
         """Function to reterive a paginated list of users from
         users list. This will return a json object, which contains
@@ -484,21 +483,18 @@ class DataStore(
             start (int): start number to begin the query from
             limit (int): number of rows to reterive
         Returns:
-            defer.Deferred: resolves to json object {list[dict[str, Any]], count}
+            defer.Deferred: resolves to list[dict[str, Any]]
         """
-        users = yield self.runInteraction(
+        return self.runInteraction(
             "get_users_paginate",
             self._simple_select_list_paginate_txn,
             table="users",
-            keyvalues={"is_guest": False},
+            keyvalues={},
             orderby=order,
             start=start,
             limit=limit,
             retcols=["name", "password_hash", "is_guest", "admin", "user_type"],
         )
-        count = yield self.runInteraction("get_users_paginate", self.get_user_count_txn)
-        retval = {"users": users, "total": count}
-        return retval
 
     def search_users(self, term):
         """Function to search users list for one or more users with

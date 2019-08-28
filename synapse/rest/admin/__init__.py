@@ -54,6 +54,17 @@ logger = logging.getLogger(__name__)
 class UsersRestServlet(RestServlet):
     PATTERNS = historical_admin_path_patterns("/users$")
 
+    """Get request to list all local users.
+    This needs user to have administrator access in Synapse.
+
+    GET /_synapse/admin/v1/users?access_token=admin_access_token&start=0&limit=10
+
+    returns:
+        200 OK with list of users if success otherwise an error.
+
+    The parameters `start` and `limit` are optional if you want to use pagination.
+    """
+
     def __init__(self, hs):
         self.hs = hs
         self.auth = hs.get_auth()
@@ -63,8 +74,16 @@ class UsersRestServlet(RestServlet):
     def on_GET(self, request):
         yield assert_requester_is_admin(self.auth, request)
 
-        ret = yield self.handlers.admin_handler.get_users()
+        order = "name"  # order by name in user table
+        start = parse_integer(request, "start")
+        limit = parse_integer(request, "limit")
 
+        ret = None
+        if (start != None and limit != None):
+            logger.info("limit: %s, start: %s", limit, start)
+            ret = yield self.handlers.admin_handler.get_users_paginate(order, start, limit)
+        else:
+            ret = yield self.handlers.admin_handler.get_users()
         return (200, ret)
 
 
@@ -548,76 +567,6 @@ class ResetPasswordRestServlet(RestServlet):
         return (200, {})
 
 
-class GetUsersPaginatedRestServlet(RestServlet):
-    """Get request to get specific number of users from Synapse.
-    This needs user to have administrator access in Synapse.
-        Example:
-            http://localhost:8008/_synapse/admin/v1/users_paginate/
-            @admin:user?access_token=admin_access_token&start=0&limit=10
-        Returns:
-            200 OK with json object {list[dict[str, Any]], count} or empty object.
-        """
-
-    PATTERNS = historical_admin_path_patterns(
-        "/users_paginate/(?P<target_user_id>[^/]*)"
-    )
-
-    def __init__(self, hs):
-        self.store = hs.get_datastore()
-        self.hs = hs
-        self.auth = hs.get_auth()
-        self.handlers = hs.get_handlers()
-
-    @defer.inlineCallbacks
-    def on_GET(self, request, target_user_id):
-        """Get request to get specific number of users from Synapse.
-        This needs user to have administrator access in Synapse.
-        """
-        yield assert_requester_is_admin(self.auth, request)
-
-        target_user = UserID.from_string(target_user_id)
-
-        if not self.hs.is_mine(target_user):
-            raise SynapseError(400, "Can only users a local user")
-
-        order = "name"  # order by name in user table
-        start = parse_integer(request, "start", required=True)
-        limit = parse_integer(request, "limit", required=True)
-
-        logger.info("limit: %s, start: %s", limit, start)
-
-        ret = yield self.handlers.admin_handler.get_users_paginate(order, start, limit)
-        return (200, ret)
-
-    @defer.inlineCallbacks
-    def on_POST(self, request, target_user_id):
-        """Post request to get specific number of users from Synapse..
-        This needs user to have administrator access in Synapse.
-        Example:
-            http://localhost:8008/_synapse/admin/v1/users_paginate/
-            @admin:user?access_token=admin_access_token
-        JsonBodyToSend:
-            {
-                "start": "0",
-                "limit": "10
-            }
-        Returns:
-            200 OK with json object {list[dict[str, Any]], count} or empty object.
-        """
-        yield assert_requester_is_admin(self.auth, request)
-        UserID.from_string(target_user_id)
-
-        order = "name"  # order by name in user table
-        params = parse_json_object_from_request(request)
-        assert_params_in_dict(params, ["limit", "start"])
-        limit = params["limit"]
-        start = params["start"]
-        logger.info("limit: %s, start: %s", limit, start)
-
-        ret = yield self.handlers.admin_handler.get_users_paginate(order, start, limit)
-        return (200, ret)
-
-
 class SearchUsersRestServlet(RestServlet):
     """Get request to search user table for specific users according to
     search term.
@@ -750,7 +699,6 @@ def register_servlets_for_client_rest_resource(hs, http_server):
     PurgeHistoryRestServlet(hs).register(http_server)
     UsersRestServlet(hs).register(http_server)
     ResetPasswordRestServlet(hs).register(http_server)
-    GetUsersPaginatedRestServlet(hs).register(http_server)
     SearchUsersRestServlet(hs).register(http_server)
     ShutdownRoomRestServlet(hs).register(http_server)
     UserRegisterServlet(hs).register(http_server)

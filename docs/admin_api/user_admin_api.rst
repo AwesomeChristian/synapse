@@ -5,9 +5,10 @@ This API returns all local user accounts.
 
 The api is::
 
-    GET /_synapse/admin/v1/users
+    GET /_synapse/admin/v1/users?access_token=<admin_access_token>&start=0&limit=10
 
 including an ``access_token`` of a server admin.
+The parameters ``start`` and ``limit`` are optional and are used for pagination.
 
 It returns a JSON body like the following:
 
