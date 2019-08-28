@@ -460,7 +460,7 @@ class DataStore(
         )
 
     def get_users(self):
-        """Function to reterive a list of users in users table.
+        """Function to retrieve a list of users in users table.
 
         Args:
         Returns:
@@ -474,14 +474,14 @@ class DataStore(
         )
 
     def get_users_paginate(self, order, start, limit):
-        """Function to reterive a paginated list of users from
+        """Function to retrieve a paginated list of users from
         users list. This will return a json object, which contains
         list of users and the total number of users in users table.
 
         Args:
             order (str): column name to order the select by this column
             start (int): start number to begin the query from
-            limit (int): number of rows to reterive
+            limit (int): number of rows to retrieve
         Returns:
             defer.Deferred: resolves to list[dict[str, Any]]
         """
