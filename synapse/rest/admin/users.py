@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import re
+import logging
 
 from twisted.internet import defer
 
@@ -20,10 +21,53 @@ from synapse.api.errors import SynapseError
 from synapse.http.servlet import (
     RestServlet,
     assert_params_in_dict,
+    parse_integer,
     parse_json_object_from_request,
 )
-from synapse.rest.admin import assert_requester_is_admin, assert_user_is_admin
+from synapse.rest.admin import (
+    assert_requester_is_admin,
+    assert_user_is_admin,
+    historical_admin_path_patterns,
+)
 from synapse.types import UserID
+
+logger = logging.getLogger(__name__)
+
+
+class UsersRestServlet(RestServlet):
+    PATTERNS = historical_admin_path_patterns("/users$")
+
+    """Get request to list all local users.
+    This needs user to have administrator access in Synapse.
+
+    GET /_synapse/admin/v1/users?access_token=admin_access_token&start=0&limit=10
+
+    returns:
+        200 OK with list of users if success otherwise an error.
+
+    The parameters `start` and `limit` are optional if you want to use pagination.
+    """
+
+    def __init__(self, hs):
+        self.hs = hs
+        self.auth = hs.get_auth()
+        self.handlers = hs.get_handlers()
+
+    @defer.inlineCallbacks
+    def on_GET(self, request):
+        yield assert_requester_is_admin(self.auth, request)
+
+        order = "name"  # order by name in user table
+        start = parse_integer(request, "start")
+        limit = parse_integer(request, "limit")
+
+        ret = None
+        if (start != None and limit != None):
+            logger.info("limit: %s, start: %s", limit, start)
+            ret = yield self.handlers.admin_handler.get_users_paginate(order, start, limit)
+        else:
+            ret = yield self.handlers.admin_handler.get_users()
+        return (200, ret)
 
 
 class UserAdminServlet(RestServlet):

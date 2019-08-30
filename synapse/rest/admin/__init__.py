@@ -44,47 +44,11 @@ from synapse.rest.admin._base import (
 from synapse.rest.admin.media import register_servlets_for_media_repo
 from synapse.rest.admin.purge_room_servlet import PurgeRoomServlet
 from synapse.rest.admin.server_notice_servlet import SendServerNoticeServlet
-from synapse.rest.admin.users import UserAdminServlet
+from synapse.rest.admin.users import UserAdminServlet, UsersRestServlet
 from synapse.types import UserID, create_requester
 from synapse.util.versionstring import get_version_string
 
 logger = logging.getLogger(__name__)
-
-
-class UsersRestServlet(RestServlet):
-    PATTERNS = historical_admin_path_patterns("/users$")
-
-    """Get request to list all local users.
-    This needs user to have administrator access in Synapse.
-
-    GET /_synapse/admin/v1/users?access_token=admin_access_token&start=0&limit=10
-
-    returns:
-        200 OK with list of users if success otherwise an error.
-
-    The parameters `start` and `limit` are optional if you want to use pagination.
-    """
-
-    def __init__(self, hs):
-        self.hs = hs
-        self.auth = hs.get_auth()
-        self.handlers = hs.get_handlers()
-
-    @defer.inlineCallbacks
-    def on_GET(self, request):
-        yield assert_requester_is_admin(self.auth, request)
-
-        order = "name"  # order by name in user table
-        start = parse_integer(request, "start")
-        limit = parse_integer(request, "limit")
-
-        ret = None
-        if (start != None and limit != None):
-            logger.info("limit: %s, start: %s", limit, start)
-            ret = yield self.handlers.admin_handler.get_users_paginate(order, start, limit)
-        else:
-            ret = yield self.handlers.admin_handler.get_users()
-        return (200, ret)
 
 
 class VersionServlet(RestServlet):
