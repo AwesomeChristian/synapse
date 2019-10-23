@@ -643,3 +643,53 @@ class PurgeRoomTestCase(unittest.HomeserverTestCase):
             self.assertEqual(count, 0, msg="Rows not purged in {}".format(table))
 
     test_purge_room.skip = "Disabled because it's currently broken"
+
+
+class UserCreateTestCase(unittest.HomeserverTestCase):
+
+    servlets = [synapse.rest.admin.register_servlets]
+
+    def prepare(self, reactor, clock, hs):
+
+        self.url = "/_synapse/admin/v2/users/"
+
+        self.admin_user = self.register_user("admin", "pass", admin=True)
+        self.admin_user_tok = self.login("admin", "pass")
+
+        self.other_user = self.register_user("user", "pass")
+        self.other_user_token = self.login("user", "pass")
+
+        return self.hs
+
+    def test_requester_is_no_admin(self):
+        """
+        If the user is not a server admin, an error is returned.
+        """
+        self.hs.config.registration_shared_secret = None
+
+        request, channel = self.make_request(
+            "PUT", self.url + "@bob", access_token=self.other_user_tok, content=b"{}",
+        )
+        self.render(request)
+
+        self.assertEqual(403, int(channel.result["code"]), msg=channel.result["body"])
+        self.assertEqual("You are not a server admin", channel.json_body["error"])
+
+    def test_requester_is_admin(self):
+        """
+        If the user is a server admin, a new user is created.
+        """
+        self.hs.config.registration_shared_secret = None
+
+        body = json.dumps({"password": "abc123", "admin": True})
+
+        request, channel = self.make_request(
+            "PUT",
+            self.url + "@bob",
+            access_token=self.admin_user_tok,
+            content=body.encode(encoding="utf_8"),
+        )
+        self.render(request)
+
+        self.assertEqual(200, int(channel.result["code"]), msg=channel.result["body"])
+        self.assertEqual("@bob:test", channel.json_body["user_id"])

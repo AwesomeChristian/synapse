@@ -55,6 +55,13 @@ class AdminHandler(BaseHandler):
         return ret
 
     @defer.inlineCallbacks
+    def get_user(self, user):
+        """Function to get user details"""
+        ret = yield self.store.get_user(user)
+
+        return ret
+
+    @defer.inlineCallbacks
     def get_users(self):
         """Function to retrieve a list of users in users table.
 
