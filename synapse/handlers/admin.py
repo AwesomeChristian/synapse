@@ -55,6 +55,16 @@ class AdminHandler(BaseHandler):
         return ret
 
     @defer.inlineCallbacks
+    def get_user(self, user):
+        """Function to get user details"""
+        ret = yield self.store.get_user(user.to_string())
+        if ret:
+            profile = yield self.store.get_profileinfo(user.localpart)
+            ret["displayname"] = profile.display_name
+            ret["avatar_url"] = profile.avatar_url
+        return ret
+
+    @defer.inlineCallbacks
     def get_users(self):
         """Function to retrieve a list of users in users table.
 

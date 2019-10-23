@@ -471,6 +471,24 @@ class DataStore(
             "generate_user_daily_visits", _generate_user_daily_visits
         )
 
+    def get_user(self, user):
+        """Function to get user details"""
+        # TODO LEFT JOIN with profile info?
+        return self._simple_select_one(
+            table="users",
+            keyvalues={"name": user},
+            retcols=[
+                "name",
+                "password_hash",
+                "is_guest",
+                "admin",
+                "user_type",
+                "deactivated",
+            ],
+            allow_none=True,
+            desc="get_user",
+        )
+
     def get_users(self):
         """Function to retrieve a list of users in users table.
 
