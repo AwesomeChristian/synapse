@@ -230,7 +230,7 @@ def generate_pdf( user_list, server_location, no_dry_run, qr_only, logo, _print=
     pdf.cell(col_width, 2*th, 'Displayname', border=1)
     pdf.cell(col_width, 2*th, 'Username', border=1)
     pdf.cell(col_width, 2*th, 'Password', border=1)
-    pdf.set_font('Helvetica','',10.0) 
+    pdf.set_font('Courier','',10.0) 
     pdf.ln(2*th)
 
     for user in user_list:

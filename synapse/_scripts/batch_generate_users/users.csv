@@ -1,7 +1,7 @@
-first_name;last_name;admin;user_type
-Monika;Mustermann;;
-Hans;Meiser;;
-Kurt;MÃ¼ller;;
-Wolfgang;KrauÃŸe;;
-Tanja;NeuhÃ¤uÃŸer;;
-Erika;Hansen;;
+first_name;last_name;username;password;admin;user_type
+Monika;Mustermann;;;;
+Hans;Meiser;;;;
+Kurt;Müller;;;;
+Wolfgang;Krauße;;;;
+Tanja;Neuhäußer;;;;
+Erika;Hansen;;;;
