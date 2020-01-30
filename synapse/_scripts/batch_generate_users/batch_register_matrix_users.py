@@ -131,7 +131,7 @@ def request_registration(
     return r
 
 
-def generate_pdf( user_list, server_location, no_dry_run, logo, _print=print,):
+def generate_pdf( user_list, server_location, no_dry_run, qr_only, logo, _print=print,):
 
     counter = 0
     pdf = FPDF('P', 'mm', 'A4')
@@ -195,7 +195,7 @@ def generate_pdf( user_list, server_location, no_dry_run, logo, _print=print,):
                     w = 50, h = 50,
                     type = '', link = None)
 
-        if not no_dry_run:
+        if not no_dry_run and not qr_only:
             pdf.set_font("Helvetica", size=24)
             pdf.set_text_color(220, 50, 50)
             pdf.text(75, start_y + 30, 'Credentials not valid !')
@@ -240,7 +240,7 @@ def generate_pdf( user_list, server_location, no_dry_run, logo, _print=print,):
         
         pdf.ln(2*th)
 
-    if not no_dry_run:
+    if not no_dry_run and not qr_only:
         pdf.set_font("Helvetica", size=24)
         pdf.set_text_color(220, 50, 50)
         pdf.text(75, 60, 'Credentials not valid !')
@@ -325,7 +325,7 @@ def batch_register_new_users(file, server_location, admin_user, admin_password, 
                 _user_id = '@' + _username + ':' + _servername
 
             res = {}
-            if no_dry_run or qr_only:
+            if no_dry_run and not qr_only:
                 res = request_registration(_username, _password, _display_name, server_location, _access_token, _is_admin, _user_type)
                 if res == False:    
                     _print("ERROR while registering user '" + row['first_name'], row['last_name'] + "'")
@@ -340,7 +340,7 @@ def batch_register_new_users(file, server_location, admin_user, admin_password, 
             # avoid Error 429 "Too Many Requests"
             time.sleep(3)
 
-        generate_pdf(user_list, server_location, no_dry_run, logo)
+        generate_pdf(user_list, server_location, no_dry_run, qr_only, logo)
 
 
 def main():
